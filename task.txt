@@ -1,0 +1,3 @@
+* auto replace materials
+* checkout cubemap camera relult
+* research cubemap mapping
