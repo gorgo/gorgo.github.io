@@ -5,8 +5,8 @@
 		<author>Anonymous</author>
 		<authoring_tool>Collada Exporter for Blender 2.6+, by Juan Linietsky (juan@codenix.com)</authoring_tool>
 	</contributor>
-	<created>2016-10-19T12:43:13Z</created>
-	<modified>2016-10-19T12:43:13Z</modified>
+	<created>2016-10-19T20:46:53Z</created>
+	<modified>2016-10-19T20:46:53Z</modified>
 	<unit meter="1.0" name="meter"/>
 	<up_axis>Z_UP</up_axis>
 </asset>
@@ -21821,6 +21821,14 @@
 </library_geometries>
 <library_visual_scenes>
 	<visual_scene id="id-scene-1" name="scene">
+		<node id="Inside" name="Inside" type="NODE">
+			<matrix sid="transform"> 1.0 0.0 0.0 222.87686157226562 0.0 1.0 0.0 -324.05419921875 0.0 0.0 1.0 34.751399993896484 0.0 0.0 0.0 1.0  </matrix>
+				<extra>
+					<technique profile="GODOT">
+						<empty_draw_type>PLAIN_AXES</empty_draw_type>
+					</technique>
+				</extra>
+		</node>
 		<node id="Group001" name="Group001" type="NODE">
 			<matrix sid="transform"> 74.57462310791016 0.0 0.0 0.0 0.0 74.57462310791016 3.2597602057649055e-06 0.0 0.0 -3.2597602057649055e-06 74.57462310791016 0.0 0.0 0.0 0.0 1.0  </matrix>
 				<extra>

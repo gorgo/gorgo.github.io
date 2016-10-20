@@ -48,6 +48,9 @@
 			varying vec2 vNg;
 			varying vec2 vNb;
 
+			uniform float ratio;
+			uniform float normalMul;
+
 			void main() {
 
 			    vec4 p = vec4( position, 1. );
@@ -55,36 +58,34 @@
 			    vec3 e = normalize( vec3( modelViewMatrix * p ) );
 			    vec3 n = normalize( normalMatrix * normal );
 
-					float ratio = 0.55;
-					const float DELTA = 0.009;
+
+					const float DELTA = 0.002;
 			    vec3 r;
 					float m;
-					r = refract( e, n, ratio );
+					r = refract( e, n, ratio);
 					m = 2. * sqrt(
 			        pow( r.x, 2. ) +
 			        pow( r.y, 2. ) +
 			        pow( r.z + 1., 2. )
 			    );
-			    vNr = r.xy + .5;
+			    vNr = r.xy  + .5;
 
-					ratio += DELTA;
-					r = refract( e, n, ratio );
+					r = refract( e, n, ratio  + DELTA);
 					m = 2. * sqrt(
 							pow( r.x, 2. ) +
 							pow( r.y, 2. ) +
 							pow( r.z + 1., 2. )
 					);
-					vNg = r.xy + .5;
+					vNg = r.xy  + .5;
 
 
-					ratio += DELTA;
-					r = refract( e, n, ratio );
+					r = refract( e, n, ratio + DELTA + DELTA );
 					m = 2. * sqrt(
 							pow( r.x, 2. ) +
 							pow( r.y, 2. ) +
 							pow( r.z + 1., 2. )
 					);
-					vNb = r.xy + .5;
+					vNb = r.xy  + .5;
 
 
 			    gl_Position = projectionMatrix * modelViewMatrix * p;
@@ -104,7 +105,9 @@
 				base.r = texture2D( tMatCap, vNr ).r;
 				base.g = texture2D( tMatCap, vNg ).g;
 			  base.b = texture2D( tMatCap, vNb ).b;
-			  gl_FragColor = vec4( base * 1.1, 1. );
+
+
+				gl_FragColor = vec4( base * 1.0 + 0.05, 1. );
 
 			}
 		</div>
