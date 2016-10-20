@@ -9,6 +9,7 @@ var bufferTex2;
 var envSphere;
 var diamondMat;
 var diamondInsideMat;
+var stats;
 
 init();
 animate();
@@ -126,9 +127,13 @@ function init() {
 
     document.body.appendChild( renderer.domElement );
     controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    stats = new Stats();
+		document.body.appendChild( stats.dom );
 }
 
 function animate() {
+    stats.update();
     requestAnimationFrame( animate );
     if (!readyToAnimate) return;
 
