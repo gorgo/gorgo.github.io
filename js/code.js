@@ -153,18 +153,18 @@ function animate() {
     envSphere.visible = true;
     cameraInside.lookAt(cameraInside.getWorldPosition().multiplyScalar(2).sub(camera.getWorldPosition()));
     cameraInside.position.copy( inside.getWorldPosition() );
-    var l,b,w,h;
-    l = 0;
-    b = 0;
-    w = window.innerWidth*0.5;
-    h = window.innerHeight;
-    cameraInside.aspect = w/h;
-    cameraInside.updateProjectionMatrix();
-    renderer.setClearColor(0xffffff);
-    renderer.setViewport(l,b,w,h);
-    renderer.setScissor(l,b,w,h)
-    renderer.setScissorTest(true);
-    renderer.setClearColor(0xffffff);
+    // var l,b,w,h;
+    // l = 0;
+    // b = 0;
+    // w = window.innerWidth*0.5;
+    // h = window.innerHeight;
+     cameraInside.aspect = 1;
+     cameraInside.updateProjectionMatrix();
+    // renderer.setClearColor(0xffffff);
+    // renderer.setViewport(l,b,w,h);
+    // renderer.setScissor(l,b,w,h)
+    // renderer.setScissorTest(true);
+    // renderer.setClearColor(0xffffff);
     //renderer.render( scene, cameraInside );
 
     diamondMat.visible = false;
@@ -188,9 +188,9 @@ function animate() {
      //diamondMat.needsUpdate = true;
     // diamondMat.visible = false;
     //
-     l = w;
-     camera.aspect = w/h;
-     camera.updateProjectionMatrix();
+    //  l = w;
+    //  camera.aspect = w/h;
+    //  camera.updateProjectionMatrix();
     // renderer.setViewport(l,b,w,h);
     // renderer.setScissor(l,b,w,h);
     // renderer.setScissorTest(true);
