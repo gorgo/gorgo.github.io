@@ -128,12 +128,12 @@ function init() {
     document.body.appendChild( renderer.domElement );
     controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-    stats = new Stats();
-		document.body.appendChild( stats.dom );
+    // stats = new Stats();
+		// document.body.appendChild( stats.dom );
 }
 
 function animate() {
-    stats.update();
+    //stats.update();
     requestAnimationFrame( animate );
     if (!readyToAnimate) return;
 
