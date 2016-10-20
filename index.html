@@ -10,22 +10,16 @@
 	</head>
 	<body>
 		<div id="sem-vs" style="display: none;">
-			varying vec2 vN;
+			varying vec3 e;
+			varying vec3 n;
+
 
 			void main() {
 
 			    vec4 p = vec4( position, 1. );
 
-			    vec3 e = normalize( vec3( modelViewMatrix * p ) );
-			    vec3 n = normalize( normalMatrix * normal );
-
-			    vec3 r = reflect( e, n );
-			    float m = 2. * sqrt(
-			        pow( r.x, 2. ) +
-			        pow( r.y, 2. ) +
-			        pow( r.z + 1., 2. )
-			    );
-			    vN = r.xy / m + .5;
+					e = normalize( vec3( modelViewMatrix * vec4( position, 1.0 ) ) );
+    			n = normalize( normalMatrix * normal );
 
 			    gl_Position = projectionMatrix * modelViewMatrix * p;
 
@@ -34,12 +28,19 @@
 		<div id="sem-fs" style="display: none;">
 			uniform sampler2D tMatCap;
 
-			varying vec2 vN;
+			varying vec3 e;
+			varying vec3 n;
+
 
 			void main() {
 
-			    vec3 base = texture2D( tMatCap, vN ).rgb;
-			    gl_FragColor = vec4( base * 1.5, 1. );
+				vec3 r = reflect( e, n );
+				float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );
+				vec2 vN = r.xy / m + .5;
+
+				vec3 base = texture2D( tMatCap, vN ).rgb;
+
+				gl_FragColor = vec4( base * 1.5, 1. );
 
 			}
 		</div>
@@ -48,8 +49,12 @@
 			varying vec2 vNg;
 			varying vec2 vNb;
 
+			varying vec2 vNRef;
+
 			uniform float ratio;
 			uniform float normalMul;
+
+
 
 			void main() {
 
@@ -59,34 +64,31 @@
 			    vec3 n = normalize( normalMatrix * normal );
 
 
-					const float DELTA = 0.002;
+					const float DELTA = 0.004;
 			    vec3 r;
 					float m;
 					r = refract( e, n, ratio);
-					m = 2. * sqrt(
-			        pow( r.x, 2. ) +
-			        pow( r.y, 2. ) +
-			        pow( r.z + 1., 2. )
-			    );
+
 			    vNr = r.xy  + .5;
 
 					r = refract( e, n, ratio  + DELTA);
-					m = 2. * sqrt(
-							pow( r.x, 2. ) +
-							pow( r.y, 2. ) +
-							pow( r.z + 1., 2. )
-					);
+
 					vNg = r.xy  + .5;
 
 
 					r = refract( e, n, ratio + DELTA + DELTA );
+
+					vNb = r.xy  + .5;
+
+
+
+					r = reflect( e, n );
 					m = 2. * sqrt(
 							pow( r.x, 2. ) +
 							pow( r.y, 2. ) +
 							pow( r.z + 1., 2. )
 					);
-					vNb = r.xy  + .5;
-
+					vNRef = r.xy / m + .5;
 
 			    gl_Position = projectionMatrix * modelViewMatrix * p;
 
@@ -94,10 +96,15 @@
 		</div>
 		<div id="diamond-fs" style="display: none;">
 			uniform sampler2D tMatCap;
+			uniform sampler2D tRefMap;
+			uniform float refPower;
 
 			varying vec2 vNr;
 			varying vec2 vNg;
 			varying vec2 vNb;
+
+			varying vec2 vNRef;
+
 
 			void main() {
 
@@ -106,8 +113,9 @@
 				base.g = texture2D( tMatCap, vNg ).g;
 			  base.b = texture2D( tMatCap, vNb ).b;
 
+				vec3 baseRef = texture2D( tRefMap, vNRef ).rgb;
 
-				gl_FragColor = vec4( base * 1.0 + 0.05, 1. );
+				gl_FragColor = vec4( base * 0.9  + (baseRef * refPower ) + 0.05, 1. );
 
 			}
 		</div>

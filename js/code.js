@@ -21,7 +21,7 @@ function init() {
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
     camera.position.z = 1000;
 
-    cameraInside = new THREE.PerspectiveCamera( 500, window.innerWidth / window.innerHeight, 1, 10000 );
+    cameraInside = new THREE.PerspectiveCamera( 150, window.innerWidth / window.innerHeight, 1, 10000 );
 
     var bufferSize = 1024;
     bufferTex1 = new THREE.WebGLRenderTarget( bufferSize, bufferSize, {
@@ -51,6 +51,14 @@ function init() {
         normalMul: {
           type: 'float',
           value: 1.0
+        },
+        tRefMap: {
+          type: 't',
+          value: new THREE.TextureLoader().load("tex/interiorSEM.jpg")
+        },
+        refPower: {
+          type: 'float',
+          value: 0.0
         }
       },
       vertexShader: document.getElementById( 'diamond-vs' ).textContent,
@@ -73,7 +81,7 @@ function init() {
         uniforms: {
             tMatCap: {
                 type: 't',
-                value: THREE.ImageUtils.loadTexture( 'tex/matcapGold.jpg' )
+                value: new THREE.TextureLoader().load( 'tex/matcapGold.jpg' )
             },
         },
         vertexShader: document.getElementById( 'sem-vs' ).textContent,
@@ -117,7 +125,7 @@ function init() {
 		geometry.scale( - 1, 1, 1 );
 
 		var material = new THREE.MeshBasicMaterial( {
-			map: new THREE.TextureLoader().load( 'tex/umbrella.jpg' )
+			map: new THREE.TextureLoader().load( 'tex/interior.jpg' )
 		} );
 
 		mesh = new THREE.Mesh( geometry, material );
@@ -156,7 +164,7 @@ function animate() {
     renderer.setViewport(l,b,w,h);
     renderer.setScissor(l,b,w,h)
     renderer.setScissorTest(true);
-    renderer.setClearColor(0xffffaa);
+    renderer.setClearColor(0xffffff);
     //renderer.render( scene, cameraInside );
 
     diamondMat.visible = false;
@@ -164,8 +172,9 @@ function animate() {
     diamondMat.visible = true;
 
     diamondMat.uniforms.tMatCap.value = bufferTex1.texture;
-    diamondMat.uniforms.ratio.value = 0.8;
+    diamondMat.uniforms.ratio.value = 0.7;
     diamondMat.uniforms.normalMul.value = -1.0;
+    diamondMat.uniforms.refPower.value = 0.0;
     diamondMat.side = THREE.BackSide;
     diamondMat.needsUpdate = true;
 
@@ -174,6 +183,7 @@ function animate() {
     diamondMat.uniforms.tMatCap.value = bufferTex2.texture;
     // diamondMat.uniforms.ratio.value = 0.7;
     diamondMat.uniforms.normalMul.value = 1.0;
+    diamondMat.uniforms.refPower.value = 0.5;
      diamondMat.side = THREE.FrontSide;
      //diamondMat.needsUpdate = true;
     // diamondMat.visible = false;
@@ -185,7 +195,7 @@ function animate() {
     // renderer.setScissor(l,b,w,h);
     // renderer.setScissorTest(true);
     // renderer.setClearColor(0xffffff);
-    envSphere.visible = true;
+    envSphere.visible = false;
     renderer.render( scene, camera );
 
 }
