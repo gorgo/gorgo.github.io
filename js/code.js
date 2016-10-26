@@ -1,7 +1,8 @@
 var scene, camera, renderer;
 var geometry, material, mesh, monkey;
 var controls;
-var cameraInside;
+var cubeCamera;
+var cubeCameraRefracted;
 var inside;
 var readyToAnimate = false;
 var bufferTex1;
@@ -10,6 +11,9 @@ var envSphere;
 var diamondMat;
 var diamondInsideMat;
 var stats;
+var envProbe;
+var diamondCube;
+var diamondSphere;
 
 init();
 animate();
@@ -21,28 +25,42 @@ function init() {
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
     camera.position.z = 1000;
 
-    cameraInside = new THREE.PerspectiveCamera( 150, window.innerWidth / window.innerHeight, 1, 10000 );
+    cubeCamera = new THREE.CubeCamera( 1, 100000, 512 );
+    scene.add( cubeCamera );
 
-    var bufferSize = 1024;
-    bufferTex1 = new THREE.WebGLRenderTarget( bufferSize, bufferSize, {
-      minFilter: THREE.LinearFilter,
-      magFilter: THREE.LinearFilter,
-      wrapS: THREE.RepeatWrapping,
-      wrapT: THREE.RepeatWrapping,
-      format: THREE.RGBFormat } );
+    cubeCameraRefracted = new THREE.CubeCamera( 1, 100000, 512 );
+    scene.add( cubeCameraRefracted );
 
-    bufferTex2 = new THREE.WebGLRenderTarget( bufferSize, bufferSize, {
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.NearestFilter,
-        wrapS: THREE.RepeatWrapping,
-        wrapT: THREE.RepeatWrapping,
-        format: THREE.RGBFormat } );
+
+    var goodCube = new THREE.CubeTextureLoader()
+					.setPath( 'tex/cube/pisa/' )
+					.load( [ 'px.png', 'nx.png', 'py.png', 'ny.png', 'pz.png', 'nz.png' ] );
+    diamondCube = new THREE.CubeTextureLoader()
+      					.setPath( 'tex/' )
+      					.load( [ 'diamond.jpg', 'diamond.jpg', 'diamond.jpg', 'diamond.jpg', 'diamond.jpg', 'diamond.jpg' ] );
+    //
+    //
+    //
+    // var bufferSize = 1024;
+    // bufferTex1 = new THREE.WebGLRenderTargetCube( bufferSize, bufferSize, {
+    //   minFilter: THREE.LinearFilter,
+    //   magFilter: THREE.LinearFilter,
+    //   wrapS: THREE.RepeatWrapping,
+    //   wrapT: THREE.RepeatWrapping,
+    //   format: THREE.RGBFormat } );
+    //
+    // bufferTex2 = new THREE.WebGLRenderTarget( bufferSize, bufferSize, {
+    //     minFilter: THREE.LinearFilter,
+    //     magFilter: THREE.NearestFilter,
+    //     wrapS: THREE.RepeatWrapping,
+    //     wrapT: THREE.RepeatWrapping,
+    //     format: THREE.RGBFormat } );
 
     diamondMat = new THREE.ShaderMaterial({
       uniforms: {
-        tMatCap: {
+        tRefractMap: {
           type: 't',
-          value: bufferTex1.texture
+          value: null
         },
         ratio: {
           type: 'float',
@@ -52,9 +70,9 @@ function init() {
           type: 'float',
           value: 1.0
         },
-        tRefMap: {
+        tReflectMap: {
           type: 't',
-          value: new THREE.TextureLoader().load("tex/interiorSEM.jpg")
+          value: null
         },
         refPower: {
           type: 'float',
@@ -89,7 +107,7 @@ function init() {
         shading: THREE.SmoothShading
 
       } );
-
+      //goldMat.visible = false;
 
       dae.traverse ( function ( child ) {
         if ( child instanceof THREE.Mesh ) {
@@ -133,69 +151,127 @@ function init() {
 		scene.add( mesh );
     envSphere = mesh;
 
+    geometry = new THREE.SphereGeometry( 100, 60, 40 );
+    material = new THREE.ShaderMaterial({
+      uniforms: {
+        tReflectMap: {
+          type: 't',
+          value: cubeCameraRefracted.renderTarget.texture
+        },
+      },
+      vertexShader: document.getElementById( 'reflective-vs' ).textContent,
+      fragmentShader: document.getElementById( 'reflective-fs' ).textContent,
+    })
+
+    // material = new THREE.MeshBasicMaterial({'envMap' : cubeCamera.renderTarget.texture});
+
+    // mesh = new THREE.Mesh( geometry, material );
+    // scene.add(mesh);
+    // mesh.position.set(0,0,0);
+    // envProbe = mesh;
+    //
+    // geometry.computeFaceNormals();
+    // //geometry.computeFlatVertexNormals();
+    diamondSphere = new THREE.Mesh( geometry, diamondMat );
+    scene.add(diamondSphere);
+    diamondSphere.position.set(-200,0,0);
+
+
     document.body.appendChild( renderer.domElement );
     controls = new THREE.OrbitControls(camera, renderer.domElement);
-
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.rotateSpeed = 0.05;
     // stats = new Stats();
 		// document.body.appendChild( stats.dom );
 }
 
 function animate() {
     //stats.update();
+
     requestAnimationFrame( animate );
     if (!readyToAnimate) return;
-
-    //  mesh.rotation.x += 0.01;
-    //  mesh.rotation.y += 0.02;
-    mesh.rotation.y += 0.002;
-    //renderer.clear(0xffffff);
-
-    envSphere.visible = true;
-    cameraInside.lookAt(cameraInside.getWorldPosition().multiplyScalar(2).sub(camera.getWorldPosition()));
-    cameraInside.position.copy( inside.getWorldPosition() );
-    // var l,b,w,h;
-    // l = 0;
-    // b = 0;
-    // w = window.innerWidth*0.5;
-    // h = window.innerHeight;
-     cameraInside.aspect = 1;
-     cameraInside.updateProjectionMatrix();
-    // renderer.setClearColor(0xffffff);
-    // renderer.setViewport(l,b,w,h);
-    // renderer.setScissor(l,b,w,h)
-    // renderer.setScissorTest(true);
-    // renderer.setClearColor(0xffffff);
-    //renderer.render( scene, cameraInside );
-
+    controls.update();
+    //first, render regular cubemap from inside of big diamond
     diamondMat.visible = false;
-    renderer.render( scene, cameraInside, bufferTex1);
+    envSphere.visible = true;
+    cubeCamera.position.copy(inside.getWorldPosition());
+    cubeCamera.updateCubeMap(renderer, scene);
+
+
+    //render cubemap to another texture again with refract index 2.4 and fliped normals
+    //envProbe.visible = false;
     diamondMat.visible = true;
-
-    diamondMat.uniforms.tMatCap.value = bufferTex1.texture;
-    diamondMat.uniforms.ratio.value = 0.7;
-    diamondMat.uniforms.normalMul.value = -1.0;
-    diamondMat.uniforms.refPower.value = 0.0;
     diamondMat.side = THREE.BackSide;
-    diamondMat.needsUpdate = true;
+    diamondMat.uniforms.normalMul.value = -1.0;
+    diamondMat.uniforms.ratio.value = 2.4;
+    diamondMat.uniforms.tRefractMap.value = cubeCamera.renderTarget.texture;
 
-    renderer.render( scene, cameraInside, bufferTex2);
+    cubeCameraRefracted.position.copy(inside.getWorldPosition());
+    cubeCameraRefracted.updateCubeMap(renderer, scene);
+    //envProbe.visible = true;
 
-    diamondMat.uniforms.tMatCap.value = bufferTex2.texture;
-    // diamondMat.uniforms.ratio.value = 0.7;
+    //render whole scene, refract index 0.417
+    diamondMat.side = THREE.FrontSide;
     diamondMat.uniforms.normalMul.value = 1.0;
-    diamondMat.uniforms.refPower.value = 0.5;
-     diamondMat.side = THREE.FrontSide;
-     //diamondMat.needsUpdate = true;
-    // diamondMat.visible = false;
-    //
-    //  l = w;
-    //  camera.aspect = w/h;
-    //  camera.updateProjectionMatrix();
-    // renderer.setViewport(l,b,w,h);
-    // renderer.setScissor(l,b,w,h);
-    // renderer.setScissorTest(true);
-    // renderer.setClearColor(0xffffff);
+    diamondMat.uniforms.ratio.value = 0.417;
+    diamondMat.uniforms.tRefractMap.value = cubeCameraRefracted.renderTarget.texture;
+    diamondMat.uniforms.tReflectMap.value = cubeCamera.renderTarget.texture;
+
     envSphere.visible = false;
     renderer.render( scene, camera );
+
+    // //  mesh.rotation.x += 0.01;
+    // //  mesh.rotation.y += 0.02;
+    // mesh.rotation.y += 0.002;
+    // //renderer.clear(0xffffff);
+    //
+    // envSphere.visible = true;
+    // cameraInside.lookAt(cameraInside.getWorldPosition().multiplyScalar(2).sub(camera.getWorldPosition()));
+    // cameraInside.position.copy( inside.getWorldPosition() );
+    // // var l,b,w,h;
+    // // l = 0;
+    // // b = 0;
+    // // w = window.innerWidth*0.5;
+    // // h = window.innerHeight;
+    //  cameraInside.aspect = 1;
+    //  cameraInside.updateProjectionMatrix();
+    // // renderer.setClearColor(0xffffff);
+    // // renderer.setViewport(l,b,w,h);
+    // // renderer.setScissor(l,b,w,h)
+    // // renderer.setScissorTest(true);
+    // // renderer.setClearColor(0xffffff);
+    // //renderer.render( scene, cameraInside );
+    //
+    // diamondMat.visible = false;
+    // renderer.render( scene, cameraInside, bufferTex1);
+    // diamondMat.visible = true;
+    //
+    // diamondMat.uniforms.tMatCap.value = bufferTex1.texture;
+    // diamondMat.uniforms.ratio.value = 0.7;
+    // diamondMat.uniforms.normalMul.value = -1.0;
+    // diamondMat.uniforms.refPower.value = 0.7;
+    // diamondMat.side = THREE.BackSide;
+    // diamondMat.needsUpdate = true;
+    //
+    // renderer.render( scene, cameraInside, bufferTex2);
+    //
+    // diamondMat.uniforms.tMatCap.value = bufferTex2.texture;
+    // // diamondMat.uniforms.ratio.value = 0.7;
+    // diamondMat.uniforms.normalMul.value = 1.0;
+    // diamondMat.uniforms.refPower.value = 0.7;
+    //  diamondMat.side = THREE.FrontSide;
+    //  //diamondMat.needsUpdate = true;
+    // // diamondMat.visible = false;
+    // //
+    // //  l = w;
+    // //  camera.aspect = w/h;
+    // //  camera.updateProjectionMatrix();
+    // // renderer.setViewport(l,b,w,h);
+    // // renderer.setScissor(l,b,w,h);
+    // // renderer.setScissorTest(true);
+    // // renderer.setClearColor(0xffffff);
+    // envSphere.visible = false;
+    // renderer.render( scene, camera );
 
 }

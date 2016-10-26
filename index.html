@@ -45,14 +45,10 @@
 			}
 		</div>
 		<div id="diamond-vs" style="display: none;">
-			varying vec2 vNr;
-			varying vec2 vNg;
-			varying vec2 vNb;
+			varying vec3 Normal;
+			varying vec3 Position;
 
-			varying vec2 vNRef;
 
-			uniform float ratio;
-			uniform float normalMul;
 
 
 
@@ -60,63 +56,78 @@
 
 			    vec4 p = vec4( position, 1. );
 
-			    vec3 e = normalize( vec3( modelViewMatrix * p ) );
-			    vec3 n = normalize( normalMatrix * normal );
+					Normal = vec3(modelMatrix * vec4(normal, 0.));
+					Position = vec3(modelMatrix * p);
 
 
 					const float DELTA = 0.004;
-			    vec3 r;
-					float m;
-					r = refract( e, n, ratio);
 
-			    vNr = r.xy  + .5;
-
-					r = refract( e, n, ratio  + DELTA);
-
-					vNg = r.xy  + .5;
-
-
-					r = refract( e, n, ratio + DELTA + DELTA );
-
-					vNb = r.xy  + .5;
-
-
-
-					r = reflect( e, n );
-					m = 2. * sqrt(
-							pow( r.x, 2. ) +
-							pow( r.y, 2. ) +
-							pow( r.z + 1., 2. )
-					);
-					vNRef = r.xy / m + .5;
 
 			    gl_Position = projectionMatrix * modelViewMatrix * p;
 
 			}
 		</div>
 		<div id="diamond-fs" style="display: none;">
-			uniform sampler2D tMatCap;
-			uniform sampler2D tRefMap;
+			uniform samplerCube tRefractMap;
+			uniform samplerCube tReflectMap;
 			uniform float refPower;
+			uniform float ratio;
+			uniform float normalMul;
 
-			varying vec2 vNr;
-			varying vec2 vNg;
-			varying vec2 vNb;
 
-			varying vec2 vNRef;
+			varying vec3 Normal;
+			varying vec3 Position;
+
+			const float Eta = 1.4;
+			const float FresnelPower = 1.8;
+			const float F = ((1.0-Eta) * (1.0-Eta)) / ((1.0+Eta) * (1.0+Eta));
+
+			void main() {
+				vec3 COL_DELTA = vec3((1.0-ratio)*0.005);
+				vec3 I = normalize(Position - cameraPosition);
+				vec3 N = normalMul * normalize(Normal);
+				vec3 refractedDir = refract(I, N, ratio);
+				if (refractedDir == vec3(0.0))
+					refractedDir = reflect(I, N);
+				vec3 reflectedDir = reflect(I, N);
+
+				float fresnelRatio = F + (1.0 - F) * pow((1.0 - dot(-I, N)), FresnelPower);
+
+				vec3 refraction;
+				refraction.x = textureCube(tRefractMap, refractedDir).r;
+				refraction.y = textureCube(tRefractMap, refractedDir+COL_DELTA).g;
+				refraction.z = textureCube(tRefractMap, refractedDir+COL_DELTA*2.0).b;
+				//refraction = vec3(0,0,0);
+				vec3 reflection = textureCube(tReflectMap, reflectedDir).rgb;
+				gl_FragColor = vec4( mix(refraction, reflection, fresnelRatio), 1. );
+
+
+			}
+		</div>
+		<div id="reflective-vs" style="display: none;">
+			varying vec3 Normal;
+			varying vec3 Position;
+
+			void main() {
+					vec4 p = vec4(position,1);
+					Normal = vec3(modelMatrix * vec4(normal,1));
+					Position = vec3(modelMatrix * p);
+			    gl_Position = projectionMatrix * modelViewMatrix * p;
+			}
+		</div>
+		<div id="reflective-fs" style="display: none;">
+			uniform samplerCube tReflectMap;
+
+			varying vec3 Normal;
+			varying vec3 Position;
 
 
 			void main() {
+				vec3 I = normalize(Position - cameraPosition);
+    		vec3 R = reflect(I, normalize(Normal));
 
-				vec3 base;
-				base.r = texture2D( tMatCap, vNr ).r;
-				base.g = texture2D( tMatCap, vNg ).g;
-			  base.b = texture2D( tMatCap, vNb ).b;
-
-				vec3 baseRef = texture2D( tRefMap, vNRef ).rgb;
-
-				gl_FragColor = vec4( base * 0.9  + (baseRef * refPower ) + 0.05, 1. );
-
+				vec3 reflection = textureCube(tReflectMap, R).rgb;
+				gl_FragColor = vec4( reflection * 1.0, 1. );
 			}
 		</div>
 		<script src="js/three.min.js"></script>
