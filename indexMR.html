@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>My first Three.js app</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body>
+		<div id="sem-vs" style="display: none;">
+			varying vec3 e;
+			varying vec3 n;
+
+
+			void main() {
+
+			    vec4 p = vec4( position, 1. );
+
+					e = normalize( vec3( modelViewMatrix * vec4( position, 1.0 ) ) );
+    			n = normalize( normalMatrix * normal );
+
+			    gl_Position = projectionMatrix * modelViewMatrix * p;
+
+			}
+		</div>
+		<div id="sem-fs" style="display: none;">
+			uniform sampler2D tMatCap;
+
+			varying vec3 e;
+			varying vec3 n;
+
+
+			void main() {
+
+				vec3 r = reflect( e, n );
+				float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );
+				vec2 vN = r.xy / m + .5;
+
+				vec3 base = texture2D( tMatCap, vN ).rgb;
+
+				gl_FragColor = vec4( base * 1.5, 1. );
+
+			}
+		</div>
+		<div id="diamond-vs" style="display: none;">
+			varying vec3 Normal;
+			varying vec3 Position;
+
+
+
+
+
+			void main() {
+
+			    vec4 p = vec4( position, 1. );
+
+					Normal = vec3(modelMatrix * vec4(normal, 0.));
+					Position = vec3(modelMatrix * p);
+
+
+					const float DELTA = 0.004;
+
+
+			    gl_Position = projectionMatrix * modelViewMatrix * p;
+
+			}
+		</div>
+		<div id="diamond-fs" style="display: none;">
+			uniform samplerCube tRefractMap;
+			uniform samplerCube tReflectMap;
+			uniform float refPower;
+			uniform float ratio;
+			uniform float normalMul;
+
+
+			varying vec3 Normal;
+			varying vec3 Position;
+
+			const float Eta = 1.4;
+			const float FresnelPower = 1.8;
+			const float F = ((1.0-Eta) * (1.0-Eta)) / ((1.0+Eta) * (1.0+Eta));
+
+			void main() {
+				vec3 COL_DELTA = vec3((1.0-ratio)*0.005);
+				vec3 I = normalize(Position - cameraPosition);
+				vec3 N = normalMul * normalize(Normal);
+				vec3 refractedDir = refract(I, N, ratio);
+				if (refractedDir == vec3(0.0))
+					refractedDir = reflect(I, N);
+				vec3 reflectedDir = reflect(I, N);
+
+				float fresnelRatio = F + (1.0 - F) * pow((1.0 - dot(-I, N)), FresnelPower);
+
+				vec3 refraction;
+				refraction.x = textureCube(tRefractMap, refractedDir).r;
+				refraction.y = textureCube(tRefractMap, refractedDir+COL_DELTA).g;
+				refraction.z = textureCube(tRefractMap, refractedDir+COL_DELTA*2.0).b;
+				//refraction = vec3(0,0,0);
+				vec3 reflection = textureCube(tReflectMap, reflectedDir).rgb;
+				gl_FragColor = vec4( mix(refraction, reflection, fresnelRatio), 1. );
+
+
+			}
+		</div>
+		<div id="reflective-vs" style="display: none;">
+			varying vec3 Normal;
+			varying vec3 Position;
+
+			void main() {
+					vec4 p = vec4(position,1);
+					Normal = vec3(modelMatrix * vec4(normal,1));
+					Position = vec3(modelMatrix * p);
+			    gl_Position = projectionMatrix * modelViewMatrix * p;
+			}
+		</div>
+		<div id="reflective-fs" style="display: none;">
+			uniform samplerCube tReflectMap;
+
+			varying vec3 Normal;
+			varying vec3 Position;
+
+
+			void main() {
+				vec3 I = normalize(Position - cameraPosition);
+    		vec3 R = reflect(I, normalize(Normal));
+
+				vec3 reflection = textureCube(tReflectMap, R).rgb;
+				gl_FragColor = vec4( reflection * 1.0, 1. );
+			}
+		</div>
+		<script src="js/three.min.js"></script>
+		<script src="js/controls/OrbitControls.js"></script>
+		<script src="js/loaders/ColladaLoader.js"></script>
+		<!-- <script src="js/libs/stats.min.js"></script> -->
+		<script src="js/codeMR.js"></script>
+	</body>
+
+</html>
