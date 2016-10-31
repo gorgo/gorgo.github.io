@@ -117,6 +117,8 @@ function init() {
         shading: THREE.SmoothShading
 
       } );
+
+
       //goldMat.visible = false;
 
       dae.traverse ( function ( child ) {
@@ -202,9 +204,9 @@ function init() {
     //
     // geometry.computeFaceNormals();
     // //geometry.computeFlatVertexNormals();
-    diamondSphere = new THREE.Mesh( geometry, diamondMat );
-    scene.add(diamondSphere);
-    diamondSphere.position.set(-200,0,0);
+    // diamondSphere = new THREE.Mesh( geometry, diamondMat );
+    // scene.add(diamondSphere);
+    // diamondSphere.position.set(-200,0,0);
 
 
     document.body.appendChild( renderer.domElement );
