@@ -15,6 +15,7 @@ var envProbe;
 var diamondCube;
 var diamondSphere;
 var diamondMesh;
+var daeScene;
 
 init();
 animate();
@@ -24,7 +25,7 @@ function init() {
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
-    camera.position.z = 1000;
+    camera.position.z = 3000;
 
     cubeCamera = new THREE.CubeCamera( 1, 100000, 512 );
     scene.add( cubeCamera );
@@ -140,6 +141,7 @@ function init() {
 
 
       mesh = dae;
+      daeScene = dae;
 
       diamondMesh.geometry.computeFaceNormals();
       var normals = [];
@@ -244,7 +246,7 @@ function animate() {
 
     // //  mesh.rotation.x += 0.01;
     // //  mesh.rotation.y += 0.02;
-    // mesh.rotation.y += 0.002;
+    daeScene.rotation.y += 0.002;
     // //renderer.clear(0xffffff);
     //
     // envSphere.visible = true;
