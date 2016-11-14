@@ -48,58 +48,94 @@
 			varying vec3 Normal;
 			varying vec3 Position;
 
+			varying mat4 fragModelMatrix;
 
 
 
 
 			void main() {
+					fragModelMatrix = modelMatrix;
 
 			    vec4 p = vec4( position, 1. );
 
 					Normal = vec3(modelMatrix * vec4(normal, 0.));
 					Position = vec3(modelMatrix * p);
 
-
-					const float DELTA = 0.004;
-
-
 			    gl_Position = projectionMatrix * modelViewMatrix * p;
-
 			}
 		</div>
 		<div id="diamond-fs" style="display: none;">
-			uniform samplerCube tRefractMap;
-			uniform samplerCube tReflectMap;
-			uniform float refPower;
-			uniform float ratio;
+
+
+			uniform samplerCube innerRefractMap;
+			uniform sampler2D triangleMap;
 			uniform float normalMul;
 
 
 			varying vec3 Normal;
 			varying vec3 Position;
-
-			const float Eta = 1.4;
-			const float FresnelPower = 1.8;
-			const float F = ((1.0-Eta) * (1.0-Eta)) / ((1.0+Eta) * (1.0+Eta));
+			varying mat4 fragModelMatrix;
 
 			void main() {
-				vec3 COL_DELTA = vec3((1.0-ratio)*0.005);
+				float ratio = 0.47;
 				vec3 I = normalize(Position - cameraPosition);
 				vec3 N = normalMul * normalize(Normal);
-				vec3 refractedDir = refract(I, N, ratio);
-				if (refractedDir == vec3(0.0))
-					refractedDir = reflect(I, N);
+				vec3 refractedDir = normalize(refract(I * 100.1, N, ratio));
 				vec3 reflectedDir = reflect(I, N);
 
-				float fresnelRatio = F + (1.0 - F) * pow((1.0 - dot(-I, N)), FresnelPower);
+				vec3 innerRefraction = textureCube(innerRefractMap, refractedDir).rgb;
+				float cosDir = N.x;//cos(refractedDir.z * 10.0);
+				float sinDir = N.y;//sin(refractedDir.z * 10.0);
+				mat2 rotMat = mat2(cosDir, sinDir, -sinDir, cosDir);
+				vec3 triangles = texture2D(triangleMap, rotMat * (vec2(refractedDir) * 10.0)).rgb;
+				gl_FragColor = vec4( innerRefraction + triangles, 1. );
 
-				vec3 refraction;
-				refraction.x = textureCube(tRefractMap, refractedDir).r;
-				refraction.y = textureCube(tRefractMap, refractedDir+COL_DELTA).g;
-				refraction.z = textureCube(tRefractMap, refractedDir+COL_DELTA*2.0).b;
-				//refraction = vec3(0,0,0);
-				vec3 reflection = textureCube(tReflectMap, reflectedDir).rgb;
-				gl_FragColor = vec4( mix(refraction, reflection, fresnelRatio), 1. );
+
+			}
+		</div>
+		<div id="diamondFront-vs" style="display: none;">
+			varying vec3 Normal;
+			varying vec3 Position;
+
+			varying mat4 fragModelMatrix;
+
+
+
+
+			void main() {
+					fragModelMatrix = modelMatrix;
+
+			    vec4 p = vec4( position, 1. );
+
+					Normal = vec3(modelMatrix * vec4(normal, 0.));
+					Position = vec3(modelMatrix * p);
+
+			    gl_Position = projectionMatrix * modelViewMatrix * p;
+			}
+		</div>
+		<div id="diamondFront-fs" style="display: none;">
+
+
+			uniform samplerCube outerReflectMap;
+			uniform samplerCube innerRefractMap;
+			uniform float normalMul;
+
+
+			varying vec3 Normal;
+			varying vec3 Position;
+			varying mat4 fragModelMatrix;
+
+			void main() {
+				float ratio = 0.47;
+				vec3 I = normalize(Position - cameraPosition);
+				vec3 N = normalMul * normalize(Normal);
+				vec3 refractedDir = normalize(refract(I, N, ratio));
+				vec3 reflectedDir = reflect(I, N);
+
+				vec3 outerReflection = textureCube(outerReflectMap, reflectedDir).rgb;
+				vec3 innerRefraction = textureCube(innerRefractMap, refractedDir).rgb;
+
+				gl_FragColor = vec4( mix(innerRefraction, outerReflection, 0.5), 1.0 );
 
 
 			}

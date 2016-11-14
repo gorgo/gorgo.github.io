@@ -177,7 +177,7 @@ function init() {
 		geometry.scale( - 1, 1, 1 );
 
 		var material = new THREE.MeshBasicMaterial( {
-			map: new THREE.TextureLoader().load( 'tex/interior.jpg' )
+			map: new THREE.TextureLoader().load( 'tex/diamond.jpg' )
 		} );
 
 		mesh = new THREE.Mesh( geometry, material );
@@ -241,7 +241,7 @@ function animate() {
     diamondMat.uniforms.tRefractMap.value = cubeCamera.renderTarget.texture;
     diamondMat.uniforms.tReflectMap.value = cubeCamera.renderTarget.texture;
 
-    envSphere.visible = true;
+    envSphere.visible = false;
     renderer.render( scene, camera );
 
     // //  mesh.rotation.x += 0.01;
